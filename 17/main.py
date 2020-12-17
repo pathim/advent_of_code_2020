@@ -25,12 +25,12 @@ def next_gen(cells:{(int,...)})->{(int,...)}:
 		for c in cells:
 			for n in get_neighbors(c):
 				try:
-					nb[n].append(c)
+					nb[n]+=1
 				except KeyError:
-					nb[n]=[c]
+					nb[n]=1
 		new_cells=set()
 		for c in nb:
-			active_neighbors=len(nb[c])
+			active_neighbors=nb[c]
 			if active_neighbors==3 or (active_neighbors==2 and c in cells):
 				new_cells.add(c)
 		cells=new_cells
