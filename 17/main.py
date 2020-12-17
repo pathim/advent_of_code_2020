@@ -19,15 +19,18 @@ def get_neighbors(cell:(int,...))->{int,...}:
 	res.remove(cell)
 	return res
 
-def count_active(cells:set,to_count:set)->int:
-	return len(cells.intersection(to_count))
-
 def next_gen(cells:{(int,...)})->{(int,...)}:
 	while True:
-		candidates=reduce(or_,(get_neighbors(x) for x in cells))
+		nb={}
+		for c in cells:
+			for n in get_neighbors(c):
+				try:
+					nb[n].append(c)
+				except KeyError:
+					nb[n]=[c]
 		new_cells=set()
-		for c in candidates:
-			active_neighbors=count_active(cells,get_neighbors(c))
+		for c in nb:
+			active_neighbors=len(nb[c])
 			if active_neighbors==3 or (active_neighbors==2 and c in cells):
 				new_cells.add(c)
 		cells=new_cells
