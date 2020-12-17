@@ -1,6 +1,4 @@
-from functools import lru_cache,reduce
 from itertools import product
-from operator import or_,add
 
 def load_input(filename:str,dims=3) -> {(int,...)}:
 	res=set()
@@ -11,7 +9,6 @@ def load_input(filename:str,dims=3) -> {(int,...)}:
 					res.add((x,y)+(0,)*(dims-2))
 	return res
 
-@lru_cache(maxsize=None)
 def get_neighbors(cell:(int,...))->{int,...}:
 	dims=len(cell)
 	deltas=product(*[[-1,0,1]]*dims)
