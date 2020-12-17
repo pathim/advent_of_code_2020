@@ -23,20 +23,20 @@ def count_active(cells:set,to_count:set)->int:
 	return len(cells.intersection(to_count))
 
 def next_gen(cells:{(int,...)})->{(int,...)}:
-	candidates=reduce(or_,(get_neighbors(x) for x in cells))
-	new_cells=set()
-	for c in candidates:
-		active_neighbors=count_active(cells,get_neighbors(c))
-		if active_neighbors==3 or (active_neighbors==2 and c in cells):
-			new_cells.add(c)
-	return new_cells
+	while True:
+		candidates=reduce(or_,(get_neighbors(x) for x in cells))
+		new_cells=set()
+		for c in candidates:
+			active_neighbors=count_active(cells,get_neighbors(c))
+			if active_neighbors==3 or (active_neighbors==2 and c in cells):
+				new_cells.add(c)
+		cells=new_cells
+		yield cells
 
 def next_gens(cells:{(int,...)},n:int)->{(int,...)}:
-	res=cells
-	while n>0:
-		res=next_gen(res)
-		n-=1
-	return res
+	for x,_ in zip(next_gen(cells),range(n)):
+		pass
+	return x
 
 cells=load_input('input')
 first=len(next_gens(cells,6))
