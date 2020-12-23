@@ -1,4 +1,5 @@
 from itertools import count
+from copy import deepcopy
 def read_deck(f):
 	deck=[]
 	next(f) # Skip header
@@ -24,6 +25,26 @@ def play(deck1,deck2):
 		play_round(d1,d2)
 	return max(score(d1),score(d2))
 
+def play_recursive(deck1,deck2):
+	decks=(deck1.copy(),deck2.copy())
+	history=[]
+	while decks[0] and decks[1]:
+		if decks in history:
+			return 0,score(decks[0])
+		history.append(deepcopy(decks))
+		cards=[decks[0].pop(0),decks[1].pop(0)]
+		if cards[0]<=len(decks[0]) and cards[1]<=len(decks[1]):
+			new_decks=[decks[i][:c] for i,c in enumerate(cards)]
+			winner,_=play_recursive(*new_decks)
+		else:
+			winner=cards.index(max(cards))
+		decks[winner].append(cards.pop(winner))
+		decks[winner].append(cards[0])
+	if decks[0]:
+		return 0,score(decks[0])
+	return 1,score(decks[1])
+
+
 def score(deck):
 	return sum(a*b for a,b in zip(reversed(deck),count(1)))
 		
@@ -33,3 +54,5 @@ with open('input') as f:
 
 first=play(deck1,deck2)
 print(f"First solution {first}")
+_,second=play_recursive(deck1,deck2)
+print(f"Second solution {second}")
