@@ -1,4 +1,5 @@
 import re
+from collections import defaultdict
 
 def read_line(line):
 	regex=re.compile('(e|se|sw|w|nw|ne)')
@@ -30,6 +31,21 @@ def movements_to_coords(mov):
 			y+=1
 	return (x,y)
 
+def neighbours(coords):
+	nb=[(1,0),(-1,0),(1,-1),(0,-1),(-1,1),(0,1)]
+	res={tuple(a+b for a,b in zip(n,coords)) for n in nb}
+	return res
+
+def generation(current):
+	nb_count=defaultdict(int)
+	for c in current:
+		for n in neighbours(c):
+			nb_count[n]+=1
+	new={k for k,v in nb_count.items() if v==2}
+	keep={k for k,v in nb_count.items() if v==1 and (k in current)}
+	return new|keep
+
+
 black=set()
 
 with open('input') as f:
@@ -37,3 +53,7 @@ with open('input') as f:
 		coords=movements_to_coords(read_line(line.strip()))
 		black^={coords}
 print(f"First solution: {len(black)}")
+
+for _ in range(100):
+	black=generation(black)
+print(f"Second solution: {len(black)}")
