@@ -2,11 +2,17 @@ from collections import defaultdict
 from itertools import chain
 from operator import mul
 from functools import reduce
+import numpy as np
+from scipy.signal import convolve2d
+
+def raw_to_numpy(data):
+	d=[[int(c=='#') for c in line] for line in data]
+	return np.array(d)
 
 class Tile:
 	def __init__(self,tile_id,data):
 		self.id=tile_id
-		self.data=data
+		self.data=raw_to_numpy(data)
 		top=data[0]
 		bottom=data[-1]
 		dT=[''.join(x) for x in zip(*data)]
@@ -33,11 +39,22 @@ class Tile:
 	def num_neighbours(self):
 		return len({x for x in self.neighbours.values() if x})
 	def get_right(self,edge=None):
-		dirmap={0:3,1:2,2:0,3:1,4:2,5:3,6:1,7:0}
+		dirmap={0:3,1:7,2:1,3:5,4:2,5:6,6:0,7:4}
 		if not edge:
 			edge=self.orientation
 		idx=self.edges.index(edge)
 		return self.edges[dirmap[idx]]
+	def to_numpy(self):
+		idx=self.edges.index(self.orientation)
+		if idx==0: return self.data
+		if idx==1: return np.flip(self.data,0)
+		if idx==2: return self.data.T
+		if idx==3: return np.flip(self.data.T,0)
+		if idx==4: return np.flip(self.data,1)
+		if idx==5: return np.flip(np.flip(self.data,0),1)
+		if idx==6: return np.flip(self.data.T,1)
+		if idx==7: return np.flip(np.flip(self.data.T,0),1)
+
 
 def read_single_tile(f):
 	try:
@@ -64,13 +81,14 @@ def build_down(start_tile,tiles,edgemap):
 	bottom=current_tile.get_opposite_edge(current_tile.orientation)
 	res=[current_tile]
 	while current_tile:=current_tile.neighbours[bottom]:
+		current_tile.orientation=bottom
 		bottom=current_tile.get_opposite_edge(bottom)
 		res.append(current_tile)
 	return res
 	
 	
 edgemap=defaultdict(list)
-with open('ex') as f:
+with open('input') as f:
 	tiles={tile.id:tile for tile in read_tiles(f)}
 for tile_id,tile in tiles.items():
 	for e in tile.edges:
@@ -88,5 +106,27 @@ for bottom in (edge for edge,tile in top_left.neighbours.items() if tile):
 		break
 cols=[build_down(top_left,tiles,edgemap)]
 while tile:=cols[-1][0].neighbours[cols[-1][0].get_right()]:
-	tile.orientation=tile.get_right(cols[-1][0].get_right())
+	tile.orientation=tile.get_right(''.join(reversed(cols[-1][0].get_right())))
 	cols.append(build_down(tile,tiles,edgemap))
+
+tilesize=next(iter(tiles.values())).data.shape[0]-2
+fullsize=np.sqrt(len(tiles))*tilesize
+fullpic=np.empty((int(fullsize),)*2,dtype=int)
+
+for x,col in enumerate(cols):
+	for y,tile in enumerate(col):
+		fullpic[tilesize*y:tilesize*(y+1),tilesize*x:tilesize*(x+1)]=tile.to_numpy()[1:tilesize+1,1:tilesize+1]
+
+monster=[
+'                  # ',
+'#    ##    ##    ###',
+' #  #  #  #  #  #   ']
+monster=np.array([[int(c=='#') for c in l] for l in monster])
+monster_r=np.rot90(monster)
+all_monster=[
+	monster,np.flip(monster),np.flip(monster,0),np.flip(monster,1),
+	monster_r,np.flip(monster_r),np.flip(monster_r,0),np.flip(monster_r,1),
+]
+
+second=fullpic.sum()-sum([(convolve2d(fullpic,m,mode='valid')==15).sum() for m in all_monster])*monster.sum()
+print(f"Second solution {second}")
